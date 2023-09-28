@@ -1,0 +1,20 @@
+dataframe_list = [
+    (master_df, "Master"),
+    (post_attributes_df, "post_attributes"),
+    (brand_df, "brand"),
+    (account_df, "account"),
+    (Partnership_account, "Partnership_account")
+]
+
+
+for df, name in dataframe_list:
+    csv_s3_path = f"{base_s3_df_path}{name}.csv"
+    parquet_s3_path = f"{base_s3_df_path}{name}.parquet"
+
+    # Save as CSV
+    df.coalesce(1).write.mode("overwrite").option("header", "true").csv(csv_s3_path)
+    print(f"DataFrame {name} has been saved as CSV to {csv_s3_path}")
+
+    # Save as Parquet
+    df.coalesce(1).write.mode("overwrite").option("header", "true").parquet(parquet_s3_path)
+    print(f"DataFrame {name} has been saved as Parquet to {parquet_s3_path}")
