@@ -85,4 +85,17 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps('CSV files processed successfully.')
     }
- 
+
+
+
+aws_id	
+aws_key	/irIRYgHSrBXmolNWP
+bucket_name	s3-apify-instagram-raw-dta
+dbname	dev
+endpoint	default-workgroup.980097147631.us-east-2.redshift-serverless.amazonaws.com
+iam_role	arn:aws:iam::980097147631:role/service-role/AmazonRedshift-CommandsAccessRole-20231107T074030
+password	Qaz12345!
+port	5439
+prefix	DataSchema/
+region	us-east-2
+user	admin
