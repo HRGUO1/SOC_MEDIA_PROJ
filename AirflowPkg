@@ -1,0 +1,25 @@
+pip install "apache-airflow==1.10.15"
+MarkupSafe==2.0.1
+  - Jinja2==2.11.3
+pip install "SQLAlchemy==1.3.23"
+
+airflow db init
+
+from cryptography.fernet import Fernet
+key = Fernet.generate_key()
+print(key.decode())
+>>> key = Fernet.generate_key()
+>>> print(key.decode())
+N91GVCiz5oYB9K0KxizUJ9vI5X1rBVN5AUHFitmjj24=
+
+secret key N91GVCiz5oYB9K0KxizUJ9vI5X1rBVN5AUHFitmjj24=
+
+ctrl + c
+
+# Restart Airflow webserver
+airflow webserver -p 8080
+
+# Restart Airflow scheduler
+airflow scheduler
+
+http://localhost:8080
