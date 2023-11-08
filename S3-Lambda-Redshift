@@ -1,0 +1,88 @@
+import psycopg2
+import boto3
+import os
+import json
+
+
+s3 = boto3.client('s3', aws_access_key_id=os.getenv('aws_id'), aws_secret_access_key=os.getenv('aws_key'))
+
+def list_csv_files(bucket, prefix):
+    csv_files = []
+    paginator = s3.get_paginator('list_objects_v2')
+    page_iterator = paginator.paginate(Bucket=bucket, Prefix=prefix)
+    
+    for page in page_iterator:
+        for obj in page.get('Contents', []):
+            if obj['Key'].endswith('.csv'):
+                csv_files.append(obj['Key'])
+    return csv_files
+    
+def lambda_handler(event, context):
+    aws_id = os.getenv('aws_id')
+    aws_key = os.getenv('aws_key')
+    dbname = os.getenv('dbname')
+    host = os.getenv('endpoint')  
+    user = os.getenv('user')
+    password = os.getenv('password')
+    port = os.getenv('port')
+    bucket_name = os.getenv('bucket_name')
+    prefix = os.getenv('prefix')
+    region = os.getenv('region')
+ 
+    csv_folders = list_csv_files(bucket_name, prefix)
+
+    connection = psycopg2.connect(
+        dbname=os.getenv('dbname'), 
+        host=os.getenv('endpoint'), 
+        port=os.getenv('port'), 
+        user=os.getenv('user'), 
+        password=os.getenv('password')
+    )
+    cursor = connection.cursor()
+
+    table_mapping = {
+        'account.csv/': 'account',
+        'brand.csv/': 'brand',
+        'post_attributes.csv/': 'post',
+        'Partnership_account.csv/': 'partnership_account',
+        'Master.csv/': 'master'
+    }
+   
+
+    for file in csv_folders:
+        # Extract the table name from the folder name
+        file_key = file.split('/')[1] + '/'  # This should give something like 'account.csv/'
+        table_name = table_mapping.get(file_key)
+        
+        if table_name:
+            # Construct the CSV file path within the folder
+            # This example assumes there's a single CSV file following the naming pattern shown
+            # Modify it according to your actual file naming convention
+            csv_file_path = f's3://{bucket_name}/{file}'
+
+            try:
+                copy_query = f"""
+                    COPY {table_name}
+                    FROM '{csv_file_path}'
+                    IAM_ROLE 'arn:aws:iam::980097147631:role/service-role/AmazonRedshift-CommandsAccessRole-20231107T074030'
+                    DELIMITER ','
+                    IGNOREHEADER 1
+                    REGION '{region}';
+                """
+                # Execute the COPY command
+                cursor.execute(copy_query)
+                connection.commit()
+                print(f"COPY command for table {table_name} completed successfully.")
+            except Exception as e:
+                connection.rollback()
+                print(f"Error loading data into table {table_name}: {str(e)}")
+
+    # Close the database connection
+    cursor.close()
+    connection.close()
+
+    return {
+        'statusCode': 200,
+        'body': json.dumps('CSV files processed successfully.')
+    }
+ 
